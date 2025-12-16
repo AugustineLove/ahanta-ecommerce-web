@@ -81,6 +81,17 @@ export default {
           busy: "rgb(239 68 68)",
           offline: "rgb(156 163 175)",
         },
+        success: {
+          DEFAULT: "hsl(var(--success) / <alpha-value>)",
+          foreground: "hsl(var(--success-foreground) / <alpha-value>)",
+        },
+        grey: "hsl(var(--grey) / <alpha-value>)",
+        faint: "hsl(var(--faint) / <alpha-value>)",
+        ash: "hsl(var(--ash) / <alpha-value>)",
+      },
+      boxShadow: {
+        'card': '0 2px 8px rgba(0, 0, 0, 0.08)',
+        'card-hover': '0 4px 12px rgba(0, 0, 0, 0.12)',
       },
       fontFamily: {
         sans: ["var(--font-sans)"],
