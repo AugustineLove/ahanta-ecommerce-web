@@ -3,7 +3,6 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { ThemeProvider } from "@/components/theme-provider";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
@@ -11,9 +10,16 @@ import SignUp from "@/pages/signup";
 import SignIn from "@/pages/signin";
 import VendorOnboarding from "@/pages/vendor-onboarding";
 import DriverOnboarding from "@/pages/driver-onboarding";
+import HotelOnboarding from "@/pages/hotel-onboarding";
 import VendorDashboard from "@/pages/vendor-dashboard";
 import DriverDashboard from "@/pages/driver-dashboard";
+import HotelDashboard from "@/pages/hotel-dashboard";
 import { useEffect, useState } from "react";
+import { AuthProvider, useAuth } from "./lib/firebase_auth";
+import ProfessionalOnboarding from "./pages/skilled-professional-onboarding";
+import ProfessionalDashboard from "./pages/skilled-professional-dashboard";
+
+type UserRole = "vendor" | "driver" | "hotel_manager" | "skilled_professional";
 
 function LoadingScreen() {
   return (
@@ -33,26 +39,57 @@ function ProtectedRoute({
 }: { 
   children: React.ReactNode;
   requireOnboarding?: boolean;
-  allowedRole?: "vendor" | "driver";
+  allowedRole?: UserRole;
 }) {
   const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
   const [isChecking, setIsChecking] = useState(true);
 
+  const getDashboardRoute = (role: UserRole): string => {
+    const dashboardRoutes: Record<UserRole, string> = {
+      vendor: "/dashboard/vendor",
+      driver: "/dashboard/driver",
+      hotel_manager: "/dashboard/hotel",
+      skilled_professional: "/dashboard/professional"
+    };
+    return dashboardRoutes[role] || "/signin";
+  };
+
   useEffect(() => {
     if (!isLoading) {
+      console.log('ProtectedRoute check:', { user, allowedRole, requireOnboarding });
+      
+      // User not authenticated
       if (!user) {
         navigate("/signin");
         setIsChecking(false);
-      } else if (allowedRole && user.role !== allowedRole) {
-        navigate(user.role === "vendor" ? "/dashboard/vendor" : "/dashboard/driver");
-        setIsChecking(false);
-      } else if (requireOnboarding && user.onboardingComplete) {
-        navigate(user.role === "vendor" ? "/dashboard/vendor" : "/dashboard/driver");
-        setIsChecking(false);
-      } else {
-        setIsChecking(false);
+        return;
       }
+      if (allowedRole && user.role !== allowedRole) {
+        navigate(getDashboardRoute(user.role as UserRole));
+        setIsChecking(false);
+        return;
+      }
+
+      if (requireOnboarding && user.onboardingComplete) {
+        navigate(getDashboardRoute(user.role as UserRole));
+        setIsChecking(false);
+        return;
+      }
+
+      if (!requireOnboarding && !user.onboardingComplete) {
+        const onboardingRoutes: Record<UserRole, string> = {
+          vendor: "/onboarding/vendor",
+          driver: "/onboarding/driver",
+          hotel_manager: "/onboarding/hotel",
+          skilled_professional: "/onboarding/professional"
+        };
+        navigate(onboardingRoutes[user.role as UserRole] || "/signin");
+        setIsChecking(false);
+        return;
+      }
+
+      setIsChecking(false);
     }
   }, [user, isLoading, navigate, allowedRole, requireOnboarding]);
 
@@ -70,29 +107,62 @@ function ProtectedRoute({
 function Router() {
   return (
     <Switch>
+      {/* Public Routes */}
       <Route path="/" component={Landing} />
       <Route path="/signup" component={SignUp} />
       <Route path="/signin" component={SignIn} />
+      
+      {/* Onboarding Routes */}
       <Route path="/onboarding/vendor">
         <ProtectedRoute requireOnboarding allowedRole="vendor">
           <VendorOnboarding />
         </ProtectedRoute>
       </Route>
+      
       <Route path="/onboarding/driver">
         <ProtectedRoute requireOnboarding allowedRole="driver">
           <DriverOnboarding />
         </ProtectedRoute>
       </Route>
+      
+      <Route path="/onboarding/hotel">
+        <ProtectedRoute requireOnboarding allowedRole="hotel_manager">
+          <HotelOnboarding />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/onboarding/professional">
+        <ProtectedRoute requireOnboarding allowedRole="skilled_professional">
+          <ProfessionalOnboarding />
+        </ProtectedRoute>
+      </Route>
+      
+      {/* Dashboard Routes */}
       <Route path="/dashboard/vendor">
         <ProtectedRoute allowedRole="vendor">
           <VendorDashboard />
         </ProtectedRoute>
       </Route>
+      
       <Route path="/dashboard/driver">
         <ProtectedRoute allowedRole="driver">
           <DriverDashboard />
         </ProtectedRoute>
       </Route>
+      
+      <Route path="/dashboard/hotel">
+        <ProtectedRoute allowedRole="hotel_manager">
+          <HotelDashboard />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/dashboard/professional">
+        <ProtectedRoute allowedRole="skilled_professional">
+          <ProfessionalDashboard />
+        </ProtectedRoute>
+      </Route>
+      
+      {/* 404 */}
       <Route component={NotFound} />
     </Switch>
   );

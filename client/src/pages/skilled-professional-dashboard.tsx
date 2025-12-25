@@ -86,7 +86,7 @@ const vehicleColors = [
   { name: "Orange", value: "#ea580c", textColor: "white" },
 ];
 
-export default function DriverDashboard() {
+export default function ProfessionalDashboard() {
   const [, navigate] = useLocation();
   const { user, driver, logout } = useAuth();
   const { toast } = useToast();

@@ -32,6 +32,7 @@ import { auth, db } from "@/lib/firebase";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const vehicleTypes = [
   { value: "bike", label: "Bike", icon: Bike },
@@ -66,7 +67,7 @@ const vehicleUrls = [
   }
 ]
 
-export default function DriverOnboarding() {
+export default function ProfessionalOnboarding() {
   const [, navigate] = useLocation();
   const { user, updateUser } = useAuth();
   const { toast } = useToast();
@@ -85,10 +86,11 @@ export default function DriverOnboarding() {
     resolver: zodResolver(driverVehicleInfoSchema),
     defaultValues: {
       vehicleType: "bike",
-      vehicleNumber: "",
+      businessNumber: "",
       vehicleColor: "",
-      description: "Reliable driver available for quick and safe transportation services",
+      description: "Top rated hotel",
       label: "",
+      profession: "",
       services: [],
     },
   });
@@ -153,7 +155,7 @@ export default function DriverOnboarding() {
 
   const steps = [
     { number: 1, title: "Personal Info" },
-    { number: 2, title: "Vehicle Info" },
+    { number: 2, title: "Profession Info" },
   ];
 
   const getVehiclePreviewColor = () => {
@@ -227,7 +229,7 @@ export default function DriverOnboarding() {
                           <FormLabel>Full Name</FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="e.g., Augustine Okonkwo"
+                              placeholder="e.g., Aug Love"
                               data-testid="input-full-name"
                               {...field}
                             />
@@ -292,57 +294,68 @@ export default function DriverOnboarding() {
           {step === 2 && (
             <Card className="border-ash dark:border-border" data-testid="card-vehicle-info">
               <CardHeader>
-                <CardTitle>Vehicle Information</CardTitle>
+                <CardTitle>Profession Information</CardTitle>
                 <CardDescription>Tell us about your vehicle</CardDescription>
               </CardHeader>
               <CardContent>
                 <Form {...vehicleForm}>
                   <form onSubmit={vehicleForm.handleSubmit(handleVehicleInfoSubmit)} className="space-y-6">
                     <FormField
-                      control={vehicleForm.control}
-                      name="vehicleType"
-                      render={({ field }) => (
+                        control={vehicleForm.control}
+                        name="profession"
+                        render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Vehicle Type</FormLabel>
-                          <FormControl>
-                            <RadioGroup
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              className="grid grid-cols-2 sm:grid-cols-4 gap-4"
-                            >
-                              {vehicleTypes.map((vehicle) => (
-                                <div key={vehicle.value}>
-                                  <RadioGroupItem
-                                    value={vehicle.value}
-                                    id={vehicle.value}
-                                    className="peer sr-only"
-                                  />
-                                  <Label
-                                    htmlFor={vehicle.value}
-                                    className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-ash dark:border-border bg-card p-4 hover:bg-muted peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5 cursor-pointer transition-colors"
-                                    data-testid={`radio-${vehicle.value}`}
-                                  >
-                                    <vehicle.icon className="h-8 w-8 text-primary" />
-                                    <span className="font-medium text-sm">{vehicle.label}</span>
-                                  </Label>
-                                </div>
-                              ))}
-                            </RadioGroup>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        <FormLabel>Select profession category</FormLabel>
+                        <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                        >
+                            <FormControl>
+                            <SelectTrigger data-testid="select-role">
+                                <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="electrician">Electrician</SelectItem>
+                                <SelectItem value="plumber">Plumber</SelectItem>
+                                <SelectItem value="mechanic">Mechanic</SelectItem>
+                                <SelectItem value="carpenter">Carpenter</SelectItem>
+                                <SelectItem value="welder">Welder</SelectItem>
 
+                                <SelectItem value="cleaner">Cleaner</SelectItem>
+                                <SelectItem value="house_help">House Help</SelectItem>
+                                <SelectItem value="security">Security Guard</SelectItem>
+
+                                <SelectItem value="food_vendor">Food Vendor</SelectItem>
+                                <SelectItem value="caterer">Caterer</SelectItem>
+                                <SelectItem value="chef">Chef / Cook</SelectItem>
+                                <SelectItem value="seamstress">Seamstress</SelectItem>
+
+                                <SelectItem value="it_support">IT Support</SelectItem>
+                                <SelectItem value="computer_tech">Computer Technician</SelectItem>
+                                <SelectItem value="graphic_designer">Graphic Designer</SelectItem>
+
+                                <SelectItem value="teacher">Teacher</SelectItem>
+                                <SelectItem value="private_tutor">Private Tutor</SelectItem>
+
+                                <SelectItem value="general_worker">General Worker</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
                     <FormField
                       control={vehicleForm.control}
-                      name="vehicleNumber"
+                      name="businessNumber"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Vehicle Number</FormLabel>
+                          <FormLabel>Business Number</FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="e.g., GE 4231-24"
+                              placeholder="e.g., 012 345 6789"
                               data-testid="input-vehicle-number"
                               {...field}
                             />

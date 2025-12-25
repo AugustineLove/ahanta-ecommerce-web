@@ -17,7 +17,9 @@ import {
   productSchema,
   type VendorBusinessInfo, 
   type ProductForm,
-  type Product
+  type Product,
+  HotelBusinessInfo,
+  hotelBusinessInfoSchema
 } from "@shared/schema";
 import { 
   ShoppingBag, 
@@ -139,12 +141,12 @@ interface LocalProduct {
   customOptions?: { addons?: Addon[] } | null;
 }
 
-export default function VendorOnboarding() {
+export default function HotelOnboarding() {
   const [, navigate] = useLocation();
   const { user, updateUser } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
-  const [businessInfo, setBusinessInfo] = useState<VendorBusinessInfo | null>(null);
+  const [businessInfo, setBusinessInfo] = useState<HotelBusinessInfo | null>(null);
   const [branding, setBranding] = useState({ logoUrl: "", coverUrl: "" });
   const [products, setProducts] = useState<LocalProduct[]>(
     sampleProducts.map((p, i) => ({ ...p, id: `sample-${i}` }))
@@ -167,10 +169,10 @@ export default function VendorOnboarding() {
     Sunday: { open: '', close: '', closed: true },
   });
 
-  const businessForm = useForm<VendorBusinessInfo>({
-    resolver: zodResolver(vendorBusinessInfoSchema),
+  const businessForm = useForm<HotelBusinessInfo>({
+    resolver: zodResolver(hotelBusinessInfoSchema),
     defaultValues: {
-      brandName: "",
+      hotelName: "",
       location: "",
       area: "",
       category: "",
@@ -229,7 +231,7 @@ export default function VendorOnboarding() {
     await setDoc(
       vendorRef,
       {
-        role: "vendor",
+        role: "hotels",
         location: businessInfo?.location,
         area: businessInfo?.area,
         onboardingComplete: true,
@@ -275,7 +277,7 @@ export default function VendorOnboarding() {
 
 
 
-  const handleBusinessInfoSubmit = (data: VendorBusinessInfo) => {
+  const handleBusinessInfoSubmit = (data: HotelBusinessInfo) => {
     setBusinessInfo(data);
     setStep(2);
   };
@@ -520,10 +522,10 @@ const applyPreset = (presetType: PresetType): void => {
                   <form onSubmit={businessForm.handleSubmit(handleBusinessInfoSubmit)} className="space-y-6">
                     <FormField
                       control={businessForm.control}
-                      name="brandName"
+                      name="hotelName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Brand Name</FormLabel>
+                          <FormLabel>Hotel Name</FormLabel>
                           <FormControl>
                             <Input
                               placeholder="e.g., SHALOM FAST FOOD"

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/lib/auth-context";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { 
   ShoppingBag, 
@@ -27,6 +26,10 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { productSchema, type ProductForm } from "@shared/schema";
+import { useAuth } from "@/lib/firebase_auth";
+import { addDoc, collection, doc, getDocs, serverTimestamp, updateDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import { set } from "date-fns";
 
 interface LocalProduct {
   id: string;
@@ -46,6 +49,15 @@ interface MockOrder {
   total: number;
   status: "pending" | "preparing" | "ready" | "completed";
   time: string;
+}
+
+type ProductInput = {
+  id?: string; // present if editing
+  name: string;
+  price: number;
+  description?: string;
+  imageUrl?: string;
+  available?: boolean;
 }
 
 const productCategories = [
@@ -72,34 +84,8 @@ export default function VendorDashboard() {
   const [editingProduct, setEditingProduct] = useState<LocalProduct | null>(null);
   const [addons, setAddons] = useState<{ name: string; price: number }[]>([]);
   
-  const [products, setProducts] = useState<LocalProduct[]>([
-    {
-      id: "1",
-      name: "Fresh Bread",
-      price: 15.00,
-      category: "Packaged",
-      description: "Freshly baked daily",
-      inStock: true,
-      customOptions: null
-    },
-    {
-      id: "2",
-      name: "Custom Cake",
-      price: 80.00,
-      category: "Customizable",
-      description: "Customizable cake for special occasions",
-      inStock: true,
-      customOptions: {
-        addons: [
-          { name: "Extra Cream", price: 10.0 },
-          { name: "Chocolate Topping", price: 15.0 }
-        ]
-      }
-    }
-  ]);
-
   const [orders, setOrders] = useState<MockOrder[]>(mockOrders);
-
+  const [products, setProducts] = useState<LocalProduct[]>([]);
   const productForm = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -111,6 +97,28 @@ export default function VendorDashboard() {
       inStock: true,
     },
   });
+
+  const userId = auth.currentUser?.uid || "";
+
+  useEffect(() => {
+    console.log(`Vendor user: ${JSON.stringify(user)}`)
+    const fetchProducts = async () => {
+      const productsSnap = await getDocs(
+        collection(db, "shops", userId, "products")
+      );
+      const products = productsSnap.docs.map(d => ({
+        id: d.id,
+        ...d.data(),
+      }));
+      setProducts(products as LocalProduct[]);
+      console.log(`Products: ${JSON.stringify(products, null, 2)}`);
+    };
+
+    fetchProducts();
+  }, [userId]);
+
+  console.log(`Products: ${JSON.stringify(products, null, 2)}`);
+
 
   const stats = [
     { 
@@ -160,10 +168,10 @@ export default function VendorDashboard() {
     };
     
     if (editingProduct) {
-      setProducts(products.map(p => p.id === editingProduct.id ? newProduct : p));
+      // saveProduct(products.map(p => p.id === editingProduct.id ? newProduct : p));
       toast({ title: "Product updated successfully" });
     } else {
-      setProducts([...products, newProduct]);
+      saveProduct(newProduct);
       toast({ title: "Product added successfully" });
     }
     
@@ -188,15 +196,49 @@ export default function VendorDashboard() {
   };
 
   const handleDeleteProduct = (productId: string) => {
-    setProducts(products.filter(p => p.id !== productId));
+    // saveProduct(products.filter(p => p.id !== productId));
     toast({ title: "Product deleted" });
   };
 
   const toggleProductStock = (productId: string) => {
-    setProducts(products.map(p => 
-      p.id === productId ? { ...p, inStock: !p.inStock } : p
-    ));
+    // saveProduct(products.map(p => 
+    //   p.id === productId ? { ...p, inStock: !p.inStock } : p
+    // ));
   };
+
+  const saveProduct = async (product: LocalProduct) => {
+  const currentUser = auth.currentUser;
+
+  if (!currentUser) {
+    throw new Error("User not authenticated");
+  }
+
+  const productsRef = collection(
+    db,
+    "shops",
+    currentUser.uid,
+    "products"
+  );
+
+  if (product.id) {
+    const { id, ...data } = product;
+
+    await updateDoc(doc(productsRef, id), {
+      ...data,
+      updatedAt: serverTimestamp(),
+    });
+
+    return { id, mode: "updated" };
+  }
+
+  const docRef = await addDoc(productsRef, {
+    ...product,
+    available: true,
+    createdAt: serverTimestamp(),
+  });
+
+  return { id: docRef.id, mode: "created" };
+};
 
   const updateOrderStatus = (orderId: string, newStatus: MockOrder["status"]) => {
     setOrders(orders.map(o => 
@@ -241,7 +283,7 @@ export default function VendorDashboard() {
           </Link>
           <div className="flex items-center gap-4">
             <div className="text-right hidden sm:block">
-              <p className="text-sm font-medium" data-testid="text-vendor-name">{vendor?.brandName || "Your Store"}</p>
+              <p className="text-sm font-medium" data-testid="text-vendor-name">{user?.role === 'driver' ? user?.fullName : user?.brandName || user?.businessInfo.brandName || "Your Store"}</p>
               <p className="text-xs text-muted-foreground">{user?.email}</p>
             </div>
             <ThemeToggle />

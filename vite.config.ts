@@ -31,6 +31,7 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
   },
+  envDir: path.resolve(import.meta.dirname),
   server: {
     fs: {
       strict: true,
